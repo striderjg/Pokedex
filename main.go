@@ -4,9 +4,11 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"internal/pokecache"
 	"net/http"
 	"os"
 	"strings"
+	"time"
 )
 
 type cliCommand struct {
@@ -16,8 +18,9 @@ type cliCommand struct {
 }
 
 type config struct {
-	Next string
-	Prev string
+	Next  string
+	Prev  string
+	cache *pokecache.Cache
 }
 
 var cmds map[string]cliCommand
@@ -46,7 +49,8 @@ func main() {
 // ==================== Command Handlers ===========
 
 func commandMap(c *config) error {
-	return _mapHelper(c, c.Next)
+
+	return _map(c, c.Next)
 }
 
 func commandMapb(c *config) error {
@@ -54,10 +58,11 @@ func commandMapb(c *config) error {
 		fmt.Println("you're on the first page")
 		return nil
 	}
-	return _mapHelper(c, c.Prev)
+	return _map(c, c.Prev)
 }
 
-func _mapHelper(c *config, url string) error {
+// -- internal map that takes string url for which way we're going
+func _map(c *config, url string) error {
 	res, err := http.Get(url)
 	if err != nil {
 		return fmt.Errorf("map failed to retrieve resource: %w", err)
@@ -105,6 +110,11 @@ func cleanInput(text string) []string {
 	}
 
 	return wordList
+}
+
+func initConfig(c *config) {
+	c.cache = pokecache.NewCache(5 * time.Second)
+
 }
 
 func initCommands(c *config) {
