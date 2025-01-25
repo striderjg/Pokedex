@@ -66,7 +66,7 @@ func commandMapb(c *config) error {
 func _map(c *config, url string) error {
 	data, ok := c.cache.Get(url)
 	if !ok {
-		fmt.Println("Retrieving from internet")
+		//fmt.Println("Retrieving from internet")
 		res, err := http.Get(url)
 		if err != nil {
 			return fmt.Errorf("map failed to retrieve resource: %w", err)
@@ -127,7 +127,7 @@ func cleanInput(text string) []string {
 
 func initConfig(c *config) {
 	c.Next = "https://pokeapi.co/api/v2/location-area/"
-	c.cache = pokecache.NewCache(100 * time.Second)
+	c.cache = pokecache.NewCache(5 * time.Second)
 
 }
 
