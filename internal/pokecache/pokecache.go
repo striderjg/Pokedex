@@ -1,7 +1,6 @@
 package pokecache
 
 import (
-	"fmt"
 	"sync"
 	"time"
 )
@@ -45,14 +44,11 @@ func (c *Cache) Get(key string) ([]byte, bool) {
 }
 
 func (c *Cache) reapLoop(interval time.Duration) {
-	fmt.Println("Entering reapLoop")
 	ticker := time.NewTicker(interval)
 	for {
 		<-ticker.C
-		fmt.Println("reapLoop Unblocked")
 		c.mu.Lock()
 		for key, val := range c.data {
-			fmt.Printf("Created+interval: %v --- Now:  %v", val.createdAt.Add(interval), time.Now())
 			if val.createdAt.Add(interval).Before(time.Now()) {
 				// Nuke the cache item Create+interval > now
 				delete(c.data, key)
