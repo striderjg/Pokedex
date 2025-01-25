@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"internal/pokecache"
+	"io"
 	"net/http"
 	"os"
 	"strings"
@@ -50,7 +51,6 @@ func main() {
 // ==================== Command Handlers ===========
 
 func commandMap(c *config) error {
-
 	return _map(c, c.Next)
 }
 
@@ -64,17 +64,29 @@ func commandMapb(c *config) error {
 
 // -- internal map that takes string url for which way we're going
 func _map(c *config, url string) error {
-	res, err := http.Get(url)
-	if err != nil {
-		return fmt.Errorf("map failed to retrieve resource: %w", err)
+	data, ok := c.cache.Get(url)
+	if !ok {
+		fmt.Println("Retrieving from internet")
+		res, err := http.Get(url)
+		if err != nil {
+			return fmt.Errorf("map failed to retrieve resource: %w", err)
+		}
+		defer res.Body.Close()
+
+		data, err = io.ReadAll(res.Body)
+		if err != nil {
+			return fmt.Errorf("failed to read data: %w", err)
+		}
+		c.cache.Add(url, data)
 	}
-	defer res.Body.Close()
 
 	var resJson mapJSON
-	decoder := json.NewDecoder(res.Body)
-	if err := decoder.Decode(&resJson); err != nil {
-		return fmt.Errorf("failed to decode JSON: %w", err)
-	}
+	json.Unmarshal(data, &resJson)
+	/*
+		decoder := json.NewDecoder(res.Body)
+		if err := decoder.Decode(&resJson); err != nil {
+			return fmt.Errorf("failed to decode JSON: %w", err)
+		}*/
 
 	c.Next = resJson.Next
 	c.Prev = resJson.Previous
@@ -115,7 +127,7 @@ func cleanInput(text string) []string {
 
 func initConfig(c *config) {
 	c.Next = "https://pokeapi.co/api/v2/location-area/"
-	c.cache = pokecache.NewCache(5 * time.Second)
+	c.cache = pokecache.NewCache(100 * time.Second)
 
 }
 
