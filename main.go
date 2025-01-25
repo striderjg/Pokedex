@@ -28,6 +28,7 @@ var cmds map[string]cliCommand
 func main() {
 	scanner := bufio.NewScanner(os.Stdin)
 	cfg := config{}
+	initConfig(&cfg)
 	initCommands(&cfg)
 
 	for {
@@ -113,12 +114,12 @@ func cleanInput(text string) []string {
 }
 
 func initConfig(c *config) {
+	c.Next = "https://pokeapi.co/api/v2/location-area/"
 	c.cache = pokecache.NewCache(5 * time.Second)
 
 }
 
 func initCommands(c *config) {
-	c.Next = "https://pokeapi.co/api/v2/location-area/"
 	cmds = map[string]cliCommand{
 		"exit": {
 			name:        "exit",

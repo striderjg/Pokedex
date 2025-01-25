@@ -22,6 +22,8 @@ func NewCache(interval time.Duration) *Cache {
 }
 
 func (c *Cache) Add(key string, value []byte) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	c.data[key] = cacheEntry{
 		createdAt: time.Now(),
 		val:       value,
@@ -29,6 +31,8 @@ func (c *Cache) Add(key string, value []byte) {
 }
 
 func (c *Cache) Get(key string) ([]byte, bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	entry, ok := c.data[key]
 	if !ok {
 		return nil, false
