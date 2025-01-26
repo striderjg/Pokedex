@@ -56,6 +56,17 @@ func main() {
 
 // ==================== Command Handlers ===========
 
+func commandPrint(c *config, params []string) error {
+	fmt.Println("Displaying contents of Pokedex")
+	fmt.Println("============================================")
+
+	for _, poke := range ownedPokemon {
+		fmt.Printf(" - %v\n", poke.Name)
+	}
+
+	return nil
+}
+
 func commandCatch(c *config, params []string) error {
 	const baseUrl = "https://pokeapi.co/api/v2/pokemon/"
 	if len(params) < 2 {
@@ -257,6 +268,11 @@ func initCommands(c *config) {
 			name:        "catch",
 			description: "Attempt to catch {pokemon_name}",
 			callback:    commandCatch,
+		},
+		"print": {
+			name:        "print",
+			description: "Display contents of Pokedex",
+			callback:    commandPrint,
 		},
 	}
 }
