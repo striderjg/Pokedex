@@ -9,6 +9,7 @@ package main
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"internal/pokecache"
 	"io"
@@ -42,7 +43,7 @@ func main() {
 	cfg := config{}
 	ownedPokemon = make(map[string]PokemonChar)
 	initConfig(&cfg)
-	initCommands(&cfg)
+	initCommands()
 
 	for {
 		fmt.Print("Pokedex > ")
@@ -108,7 +109,7 @@ func commandCatch(c *config, params []string) error {
 
 	data, err := getData(c, url)
 	if err != nil {
-		// Bad status code - probably bad location name
+		// Bad status code - probably bad pokemon name
 		if strings.Compare(err.Error(), BAD_STATUS_CODE) == 0 {
 			fmt.Println("Unknown Pokemon.  Please try again.")
 			return nil
@@ -120,9 +121,8 @@ func commandCatch(c *config, params []string) error {
 
 	var resJson PokemonChar
 	json.Unmarshal(data, &resJson)
-	//fmt.Println(resJson.Name)
-	if rand.Int()%30 > resJson.BaseExperience/36 {
-		//fmt.Printf("%v was caught!\n", resJson.Name)
+	roll := rand.Int() % 9
+	if roll > resJson.BaseExperience/20 || roll == 8 {
 		if _, ok := ownedPokemon[resJson.Name]; !ok {
 			ownedPokemon[resJson.Name] = resJson
 			fmt.Printf("%v was caught!  Anding to pokedex!\n", resJson.Name)
@@ -130,14 +130,8 @@ func commandCatch(c *config, params []string) error {
 			fmt.Printf("%v was caught... but you already own a %v.  Releasing.\n", resJson.Name, resJson.Name)
 		}
 	} else {
-		fmt.Printf("%v escapted!\n", resJson.Name)
+		fmt.Printf("%v escaped!\n", resJson.Name)
 	}
-
-	// TODO:  REMOVE DEBUG
-	//for _, val := range ownedPokemon {
-	//	fmt.Printf(" - %v\n", val.Name)
-	//}
-
 	return nil
 }
 
@@ -166,10 +160,7 @@ func commandExplore(c *config, params []string) error {
 	for _, poke := range resJson.PokemonEncounters {
 		fmt.Printf(" - %v\n", poke.Pokemon.Name)
 	}
-	//fmt.Println(resJson.PokemonEncounters[0].Pokemon.Name)
-
 	return nil
-
 }
 
 func commandMap(c *config, params []string) error {
@@ -240,7 +231,8 @@ func getData(c *config, url string) ([]byte, error) {
 		defer res.Body.Close()
 
 		if res.StatusCode > 299 || res.StatusCode < 200 {
-			return nil, fmt.Errorf(BAD_STATUS_CODE)
+			//return nil, fmt.Errorf(BAD_STATUS_CODE)
+			return nil, errors.New(BAD_STATUS_CODE)
 		}
 
 		data, err = io.ReadAll(res.Body)
@@ -268,7 +260,7 @@ func initConfig(c *config) {
 
 }
 
-func initCommands(c *config) {
+func initCommands() {
 	cmds = map[string]cliCommand{
 		"exit": {
 			name:        "exit",
