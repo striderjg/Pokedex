@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"internal/pokecache"
 	"io"
+	"math/rand"
 	"net/http"
 	"os"
 	"sort"
@@ -28,10 +29,12 @@ type config struct {
 const BAD_STATUS_CODE = "status not ok"
 
 var cmds map[string]cliCommand
+var ownedPokemon map[string]PokemonChar
 
 func main() {
 	scanner := bufio.NewScanner(os.Stdin)
 	cfg := config{}
+	ownedPokemon = make(map[string]PokemonChar)
 	initConfig(&cfg)
 	initCommands(&cfg)
 
@@ -53,7 +56,50 @@ func main() {
 
 // ==================== Command Handlers ===========
 
-func commoandExplore(c *config, params []string) error {
+func commandCatch(c *config, params []string) error {
+	const baseUrl = "https://pokeapi.co/api/v2/pokemon/"
+	if len(params) < 2 {
+		fmt.Println("You must pass a location to explore")
+		return nil
+	}
+	url := baseUrl + params[1]
+
+	data, err := getData(c, url)
+	if err != nil {
+		// Bad status code - probably bad location name
+		if strings.Compare(err.Error(), BAD_STATUS_CODE) == 0 {
+			fmt.Println("Unknown Pokemon.  Please try again.")
+			return nil
+		}
+		return err
+	}
+
+	fmt.Printf("Throwing a Pokeball at %v...\n", params[1])
+
+	var resJson PokemonChar
+	json.Unmarshal(data, &resJson)
+	//fmt.Println(resJson.Name)
+	if rand.Int()%30 > resJson.BaseExperience/36 {
+		//fmt.Printf("%v was caught!\n", resJson.Name)
+		if _, ok := ownedPokemon[resJson.Name]; !ok {
+			ownedPokemon[resJson.Name] = resJson
+			fmt.Printf("%v was caught!  Anding to pokedex!\n", resJson.Name)
+		} else {
+			fmt.Printf("%v was caught... but you already own a %v.  Releasing.\n", resJson.Name, resJson.Name)
+		}
+	} else {
+		fmt.Printf("%v escapted!\n", resJson.Name)
+	}
+
+	// TODO:  REMOVE DEBUG
+	//for _, val := range ownedPokemon {
+	//	fmt.Printf(" - %v\n", val.Name)
+	//}
+
+	return nil
+}
+
+func commandExplore(c *config, params []string) error {
 	const baseUrl = "https://pokeapi.co/api/v2/location-area/"
 
 	if len(params) < 2 {
@@ -205,7 +251,12 @@ func initCommands(c *config) {
 		"explore": {
 			name:        "explore",
 			description: "Display the pokeman at location explore {location}",
-			callback:    commoandExplore,
+			callback:    commandExplore,
+		},
+		"catch": {
+			name:        "catch",
+			description: "Attempt to catch {pokemon_name}",
+			callback:    commandCatch,
 		},
 	}
 }
