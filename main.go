@@ -1,5 +1,11 @@
 package main
 
+/*
+	TODO:
+		- Move some of the entry error handing printing to the main loop with passed up messages in error
+		- Clean up my Structures
+*/
+
 import (
 	"bufio"
 	"encoding/json"
@@ -56,7 +62,32 @@ func main() {
 
 // ==================== Command Handlers ===========
 
-func commandPrint(c *config, params []string) error {
+func commandInspect(c *config, params []string) error {
+	if len(params) < 2 {
+		fmt.Println("You must pass a pokemon to inspect")
+		return nil
+	}
+	poke, ok := ownedPokemon[params[1]]
+	if !ok {
+		fmt.Println("You have not caught that pokemon")
+		return nil
+	}
+
+	fmt.Printf("Name: %v\n", poke.Name)
+	fmt.Printf("Height: %v\n", poke.Height)
+	fmt.Printf("Weight: %v\n", poke.Weight)
+	fmt.Println("Stats:")
+	for _, stat := range poke.Stats {
+		fmt.Printf("  -%v: %v\n", stat.Stat.Name, stat.BaseStat)
+	}
+	fmt.Println("Types:")
+	for _, t := range poke.Types {
+		fmt.Printf("  -%v\n", t.Type.Name)
+	}
+	return nil
+}
+
+func commandPokedex(c *config, params []string) error {
 	fmt.Println("Displaying contents of Pokedex")
 	fmt.Println("============================================")
 
@@ -269,10 +300,15 @@ func initCommands(c *config) {
 			description: "Attempt to catch {pokemon_name}",
 			callback:    commandCatch,
 		},
-		"print": {
-			name:        "print",
+		"pokedex": {
+			name:        "pokedex",
 			description: "Display contents of Pokedex",
-			callback:    commandPrint,
+			callback:    commandPokedex,
+		},
+		"inspect": {
+			name:        "inspect",
+			description: "Inspect {pokeman} - Display pokemon characteristics",
+			callback:    commandInspect,
 		},
 	}
 }
